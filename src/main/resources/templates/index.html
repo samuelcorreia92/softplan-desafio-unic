@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Avalação para Desenvolvedor de Software – Softplan UNIC</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+    <link rel="stylesheet" type="text/css" href="webjars/bootstrap/4.1.3/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="webjars/font-awesome/5.5.0/css/all.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../static/css/main.css" th:href="@{/css/main.css}"/>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">
+        <img th:src="@{/images/thymeleaf.png}" src="../static/images/thymeleaf.png" width="30" height="30" class="d-inline-block align-top" alt="">
+        Sienge
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="#">Home</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<section class="container">
+    <form action="#" method="post" th:action="@{/calculo-custo-transporte}" th:object="${calculoCustoTransporteDTO}">
+        <div class="card">
+            <h3 class="card-header">
+                Calcular Custo de Transporte
+            </h3>
+            <div class="card-body">
+                <!-- Erros -->
+                <div class="row">
+                    <ul class="alert alert-danger list-group-flush" th:if="${#fields.hasAnyErrors()}">
+                        <li class="list-group-item-action style-type-none" th:each="err : ${#fields.allErrors()}" th:text="${err}">Erro</li>
+                    </ul>
+                </div>
+
+                <!-- Tipo de Via -->
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h6>Tipo de Via:</h6>
+                        <div class="form-group row" th:each="tipoVia : *{tiposVias}">
+                            <input type="hidden" th:field="*{tiposVias[__${tipoViaStat.index}__].id}">
+                            <label class="col-sm-4 col-form-label label-right" th:text="${tipoVia.descricao} + ':'">Tipo de Via</label>
+                            <div class="col-sm-5">
+                                <input type="number" placeholder="Kms rodados"
+                                       th:field="*{tiposVias[__${tipoViaStat.index}__].kmsRodados}"
+                                       th:class="${#fields.hasErrors('tiposVias')} ? 'form-control is-invalid' : 'form-control'">
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="col-form-label" th:text="${#numbers.formatCurrency(tipoVia.custo)}">R$ 0,00 (custo)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h6>Veículo & Carga:</h6>
+
+                        <!-- Tipo de Veiculo -->
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label label-right">Tipo de Veículo:</label>
+                            <div class="col-sm-5">
+                                <select th:field="*{veiculo.id}" th:class="${#fields.hasErrors('veiculo')} ? 'form-control is-invalid' : 'form-control'">
+                                    <option value="">:: Selecone ::</option>
+                                    <option th:each="veiculo: ${veiculos}"
+                                            th:value="${veiculo.id}"
+                                            th:text="${veiculo.descricao}">Tipo de Veiculo
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Peso da Carga -->
+                        <div class="form-group row">
+                            <label class="col-sm-4 col-form-label label-right">Peso da Carga (Ton):</label>
+                            <div class="col-sm-5">
+                                <input type="number" class="form-control" placeholder="Peso Carga (Ton)" th:field="*{pesoCarga}" th:errorclass="is-invalid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-info" type="submit">
+                        <span class="fa fa-calculator"></span>
+                        Calcular
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" th:if="${resultado != null}">
+            <h3 class="card-header">
+                Resultado
+            </h3>
+            <div class="card-body">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th>Tipo de Via (Kms Rodados)</th>
+                        <th>Veículo</th>
+                        <th>Peso da Carga</th>
+                        <th>Custo de Transrpote</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <td>
+                            <ul class="list-group">
+                                <li class="list-group-item-action style-type-none" th:each="tipoVia : ${resultado.tiposVias}" th:text="${tipoVia.descricao + ' (' + tipoVia.kmsRodados + ')'}"></li>
+                            </ul>
+                        </td>
+                        <td th:text="${resultado.veiculo.descricao}"></td>
+                        <td th:text="${resultado.pesoCarga} + ' Ton'"></td>
+                        <td th:text="${#numbers.formatCurrency(resultado.custoTransporteCalculado)}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+</section>
+
+<script type="text/javascript" src="webjars/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+</body>
+</html>
