@@ -44,17 +44,21 @@
 
                 <!-- Tipo de Via -->
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="col-12">
                         <h6>Tipo de Via:</h6>
                         <div class="form-group row" th:each="tipoVia : *{tiposVias}">
                             <input type="hidden" th:field="*{tiposVias[__${tipoViaStat.index}__].id}">
-                            <label class="col-sm-4 col-form-label label-right" th:text="${tipoVia.descricao} + ':'">Tipo de Via</label>
-                            <div class="col-sm-5">
+                            <!-- Mobile -->
+                            <label class="col-12 col-form-label d-block d-sm-none" th:text="${tipoVia.descricao} + ':'">Tipo de Via</label>
+                            <!-- Tablet/Desktop -->
+                            <label class="col-md-4 col-lg-3 col-xl-2 col-form-label label-right d-none d-sm-block" th:text="${tipoVia.descricao} + ':'">Tipo de Via</label>
+
+                            <div class="col-8 col-md-5 col-lg-3">
                                 <input type="number" placeholder="Kms rodados"
                                        th:field="*{tiposVias[__${tipoViaStat.index}__].kmsRodados}"
                                        th:class="${#fields.hasErrors('tiposVias')} ? 'form-control is-invalid' : 'form-control'">
                             </div>
-                            <div class="col-sm-3">
+                            <div class="col-4 col-md-3">
                                 <label class="col-form-label" th:text="${#numbers.formatCurrency(tipoVia.custo)}">R$ 0,00 (custo)</label>
                             </div>
                         </div>
@@ -62,13 +66,17 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="col-12">
                         <h6>Veículo & Carga:</h6>
 
                         <!-- Tipo de Veiculo -->
                         <div class="form-group row">
-                            <label class="col-sm-4 col-form-label label-right">Tipo de Veículo:</label>
-                            <div class="col-sm-5">
+                            <!-- Mobile -->
+                            <label class="col-12 col-form-label d-block d-sm-none">Tipo de Veículo:</label>
+                            <!-- Tablet/Desktop -->
+                            <label class="col-md-4 col-lg-3 col-xl-2 col-form-label label-right d-none d-sm-block">Tipo de Veículo:</label>
+
+                            <div class="col-12 col-md-5 col-lg-3">
                                 <select th:field="*{veiculo.id}" th:class="${#fields.hasErrors('veiculo')} ? 'form-control is-invalid' : 'form-control'">
                                     <option value="">:: Selecone ::</option>
                                     <option th:each="veiculo: ${veiculos}"
@@ -81,8 +89,12 @@
 
                         <!-- Peso da Carga -->
                         <div class="form-group row">
-                            <label class="col-sm-4 col-form-label label-right">Peso da Carga (Ton):</label>
-                            <div class="col-sm-5">
+                            <!-- Mobile -->
+                            <label class="col-12 col-form-label d-block d-sm-none">Peso da Carga (Ton):</label>
+                            <!-- Tablet/Desktop -->
+                            <label class="col-md-4 col-lg-3 col-xl-2 col-form-label label-right d-none d-sm-block">Peso da Carga (Ton):</label>
+
+                            <div class="col-12 col-md-5 col-lg-3">
                                 <input type="number" class="form-control" placeholder="Peso Carga (Ton)" th:field="*{pesoCarga}" th:errorclass="is-invalid">
                             </div>
                         </div>
@@ -102,7 +114,29 @@
             <h3 class="card-header">
                 Resultado
             </h3>
-            <div class="card-body">
+
+            <!-- Mobile -->
+            <div class="card-body d-block d-sm-none">
+                <div class="form-group">
+                    <h6>Tipos de Vias (Kms):</h6>
+                    <p th:each="tipoVia : ${resultado.tiposVias}" th:text="${tipoVia.descricao + ' (' + tipoVia.kmsRodados + ')'}"></p>
+                </div>
+                <div class="form-group">
+                    <h6>Tipo de Veículo:</h6>
+                    <p th:text="${resultado.veiculo.descricao}"></p>
+                </div>
+                <div class="form-group">
+                    <h6>Peso da Carga:</h6>
+                    <p th:text="${resultado.pesoCarga} + ' Ton'"></p>
+                </div>
+                <div class="form-group">
+                    <h6>Custo de Transporte:</h6>
+                    <p th:text="${#numbers.formatCurrency(resultado.custoTransporteCalculado)}"></p>
+                </div>
+            </div>
+
+            <!-- Tablet/Desktop -->
+            <div class="card-body d-none d-sm-block">
                 <table class="table table-striped table-bordered">
                     <thead>
                     <tr>
