@@ -14,27 +14,25 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.validation.Valid;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/calculo-custo-transporte")
 public class CalculoCustoTransporteController {
 
-    private static final int PESO_CARGA_MAXIMO_SEM_CUSTO_ADICIONAL = 5;
-    private static final BigDecimal CUSTO_ADICIONAL_POR_TONELADA = new BigDecimal(0.02).setScale(2, RoundingMode.DOWN);
-
+    private CalculoCustoTransporteService service;
     private TipoViaService tipoViaService;
     private VeiculoService veiculoService;
     private CalculoCustoTransporteValidator validator;
     private CalculoCustoTransporteMapper mapper;
 
-    public CalculoCustoTransporteController(TipoViaService tipoViaService,
+    public CalculoCustoTransporteController(CalculoCustoTransporteService service,
+                                            TipoViaService tipoViaService,
                                             VeiculoService veiculoService,
                                             CalculoCustoTransporteValidator validator,
                                             CalculoCustoTransporteMapper mapper) {
+        this.service = service;
         this.tipoViaService = tipoViaService;
         this.veiculoService = veiculoService;
         this.validator = validator;
@@ -59,62 +57,21 @@ public class CalculoCustoTransporteController {
 
     @PostMapping
     public String calcular(@Valid CalculoCustoTransporteDTO calculoCustoTransporteDTO, BindingResult bindingResult, Model model) {
-        if (bindingResult.hasErrors()) {
-            model.addAttribute(BindingResult.MODEL_KEY_PREFIX.concat(bindingResult.getObjectName()));
-        } else {
-            List<TipoViaDTO> tiposViasPreenchidas = calculoCustoTransporteDTO.getTiposVias();
-            calculoCustoTransporteDTO.setVeiculo(veiculoService.getVeiculo(calculoCustoTransporteDTO.getVeiculo().getId()));
-            calculoCustoTransporteDTO.setTiposVias(new ArrayList<>());
+        if (!bindingResult.hasErrors()) {
+            // Deixa na lista de tipos vias apenas as que foram preenchidas na tela
+            calculoCustoTransporteDTO.setTiposVias(calculoCustoTransporteDTO.getTiposVias()
+                    .stream()
+                    .filter(tipoViaDTO -> ObjectUtils.defaultIfNull(tipoViaDTO.getKmsRodados(), 0) > 0)
+                    .collect(Collectors.toList()));
 
-            BigDecimal custoTransporte = BigDecimal.ZERO;
-            BigDecimal custoAdicionalPorKm = getCustoAdicionalPorKm(calculoCustoTransporteDTO.getPesoCarga());
-            BigDecimal fatorMultiplicadorVeiculo = calculoCustoTransporteDTO.getVeiculo().getFatorCusto();
-
-            for (TipoViaDTO tipoVia : tiposViasPreenchidas) {
-                if (ObjectUtils.defaultIfNull(tipoVia.getKmsRodados(), 0) > 0) {
-                    TipoViaDTO tipoViaBanco = tipoViaService.getTipoVia(tipoVia.getId());
-                    tipoViaBanco.setKmsRodados(tipoVia.getKmsRodados());
-                    calculoCustoTransporteDTO.getTiposVias().add(tipoViaBanco);
-
-                    BigDecimal custoPorKm = tipoViaBanco.getCusto();
-                    BigDecimal kmsRodados = BigDecimal.valueOf(tipoViaBanco.getKmsRodados());
-
-                    BigDecimal custoTransporteTipoVia = custoPorKm.multiply(kmsRodados).multiply(fatorMultiplicadorVeiculo);
-                    BigDecimal custoTransporteTipoViaAdicional = custoAdicionalPorKm.multiply(kmsRodados);
-                    custoTransporte = custoTransporte.add(custoTransporteTipoVia.add(custoTransporteTipoViaAdicional));
-                }
-            }
-
-            calculoCustoTransporteDTO.setCustoTransporteCalculado(custoTransporte);
-
-            // Adiciona o resultado do valor calculado na lista
-            model.addAttribute("resultado", calculoCustoTransporteDTO);
+            // Realiza o calculo e adiciona o resultado na lista
+            model.addAttribute("resultado", service.calcular(calculoCustoTransporteDTO));
 
             // Recria o objeto para que as informações sejam "limpas" na tela
             calculoCustoTransporteDTO = new CalculoCustoTransporteDTO();
         }
 
         return abrirPagina(calculoCustoTransporteDTO, model);
-    }
-
-    /**
-     * Calcula o custo adicional (R$) por km rodado sobre o peso da carga transportada.
-     *
-     * <p>Se o peso total da carga for de 5 toneladas ou menos, nada muda no custo do
-     * transporte. No entanto, se o peso total for maior do que 5 toneladas, para cada tonelada que
-     * exceder esse limite, é preciso acrescentar R$ 0,02 por quilômetro rodado, devido ao aumento
-     * no custo de manutenção, como desgaste de pneus por exemplo.</p>
-     *
-     * @param pesoCarga Peso da carga transportada
-     * @return Custo adicional (R$)
-     */
-    private BigDecimal getCustoAdicionalPorKm(Integer pesoCarga) {
-        BigDecimal custoAdicionalPorKm = BigDecimal.ZERO;
-        if (pesoCarga > PESO_CARGA_MAXIMO_SEM_CUSTO_ADICIONAL) {
-            int diferencaPeso = pesoCarga - PESO_CARGA_MAXIMO_SEM_CUSTO_ADICIONAL;
-            custoAdicionalPorKm = CUSTO_ADICIONAL_POR_TONELADA.multiply(BigDecimal.valueOf(diferencaPeso));
-        }
-        return custoAdicionalPorKm;
     }
 
 }
