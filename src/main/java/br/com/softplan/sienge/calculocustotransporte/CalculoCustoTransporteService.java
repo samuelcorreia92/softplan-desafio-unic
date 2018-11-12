@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class CalculoCustoTransporteService {
 
     private static final int PESO_CARGA_MAXIMO_SEM_CUSTO_ADICIONAL = 5;
-    private static final BigDecimal CUSTO_ADICIONAL_POR_TONELADA = new BigDecimal(0.02).setScale(2, RoundingMode.DOWN);
+    private static final BigDecimal CUSTO_ADICIONAL_POR_TONELADA = new BigDecimal(0.02).setScale(2, RoundingMode.HALF_DOWN);
 
     private final VeiculoService veiculoService;
     private final TipoViaService tipoViaService;
@@ -37,14 +37,17 @@ public class CalculoCustoTransporteService {
         // Consulta as informações no banco de dados (para ter as informações corretas)
         dto.setVeiculo(veiculoService.getVeiculo(dto.getVeiculo().getId()));
         dto.setTiposVias(new ArrayList<>(dto.getTiposVias().size()));
-        dto.getTiposVias().forEach(tipoViaDTO -> dto.getTiposVias().add(tipoViaService.getTipoVia(tipoViaDTO.getId())));
+        kmsRodadosPorTipoVia.forEach((id, kms) -> {
+            TipoViaDTO tipoVia = tipoViaService.getTipoVia(id);
+            tipoVia.setKmsRodados(kms);
+            dto.getTiposVias().add(tipoVia);
+        });
 
         BigDecimal custoTransporte = BigDecimal.ZERO;
         BigDecimal custoAdicionalPorKm = getCustoAdicionalPorKm(dto.getPesoCarga());
         BigDecimal fatorMultiplicadorVeiculo = dto.getVeiculo().getFatorCusto();
 
         for (TipoViaDTO tipoVia : dto.getTiposVias()) {
-            tipoVia.setKmsRodados(kmsRodadosPorTipoVia.get(tipoVia.getId()));
             BigDecimal custoPorKm = tipoVia.getCusto();
             BigDecimal kmsRodados = BigDecimal.valueOf(tipoVia.getKmsRodados());
 
@@ -52,7 +55,7 @@ public class CalculoCustoTransporteService {
             BigDecimal custoTransporteTipoViaAdicional = custoAdicionalPorKm.multiply(kmsRodados);
             custoTransporte = custoTransporte.add(custoTransporteTipoVia.add(custoTransporteTipoViaAdicional));
         }
-        dto.setCustoTransporteCalculado(custoTransporte);
+        dto.setCustoTransporteCalculado(custoTransporte.setScale(2, RoundingMode.HALF_DOWN));
         return dto;
     }
 
